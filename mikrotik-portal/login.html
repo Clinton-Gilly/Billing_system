@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Xuremi Net - Hotspot Login</title>
+  <style>
+    /* CSS Variables & Base Styles */
+    :root {
+      --navy: #0A1628;
+      --blue: #1A56DB;
+      --cyan: #06B6D4;
+      --white: #FFFFFF;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-800: #1f2937;
+      --red-500: #ef4444;
+      --red-100: #fee2e2;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      /* Animated Background */
+      background: linear-gradient(-45deg, #0A1628, #0F294D, #1A56DB, #06B6D4);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      color: var(--gray-800);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Container: Mobile-first, centered, max 480px */
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Icons */
+    .icon {
+      width: 1em;
+      height: 1em;
+      vertical-align: -0.125em;
+      display: inline-block;
+    }
+    .icon-success { color: #10b981; }
+    .icon-error { color: var(--red-500); }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+      margin-top: 10px;
+    }
+    .logo {
+      color: var(--cyan);
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .subtitle {
+      color: var(--white);
+      font-size: 16px;
+      opacity: 0.9;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    .location {
+      color: var(--white);
+      font-size: 13px;
+      opacity: 0.7;
+      margin-top: 4px;
+    }
+
+    /* Error Display */
+    .error-banner {
+      background-color: var(--red-100);
+      color: var(--red-500);
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+      display: none;
+    }
+
+    /* Cards */
+    .card {
+      background-color: var(--white);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--navy);
+    }
+
+    /* Packages */
+    .package-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .package-item {
+      border: 2px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      background: var(--white);
+    }
+    .package-item:active {
+      transform: scale(0.98);
+    }
+    .package-item.selected {
+      border-color: var(--cyan);
+      background-color: #F0FDFA; /* Light cyan tint */
+    }
+    .package-item.selected .check-icon {
+      display: block;
+    }
+    .check-icon {
+      display: none;
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      color: var(--cyan);
+      width: 20px;
+      height: 20px;
+    }
+    .pkg-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; color: var(--navy); }
+    .pkg-details { font-size: 13px; color: var(--gray-500); display: flex; align-items: center; gap: 4px; }
+    .pkg-price { font-size: 20px; font-weight: 800; color: var(--blue); margin-top: 8px; }
+
+    /* Payment Section */
+    .payment-section {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+      opacity: 0;
+    }
+    .payment-section.open {
+      max-height: 400px;
+      opacity: 1;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--gray-200);
+    }
+    
+    .input-group { margin-bottom: 16px; }
+    .input-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--navy); }
+    
+    /* Inputs: min 16px to prevent iOS zoom */
+    input[type="text"], input[type="tel"], input[type="password"] {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px; 
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: var(--blue); }
+
+    /* Buttons: min 52px height */
+    .btn {
+      width: 100%;
+      height: 52px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.7; cursor: not-allowed; }
+    .btn-blue { background-color: var(--blue); color: var(--white); }
+    .btn-navy { background-color: var(--navy); color: var(--white); }
+
+    /* Loading Spinner */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: var(--white);
+      animation: spin 1s ease-in-out infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* Skeleton Loader */
+    .skeleton {
+      height: 90px;
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* Manual Login Toggle */
+    .toggle-login {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 14px;
+      color: var(--blue);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .manual-login {
+      display: none;
+      margin-top: 16px;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 32px;
+      margin-bottom: 20px;
+    }
+    .footer a {
+      color: var(--cyan);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .footer-powered {
+      color: rgba(255,255,255,0.4);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    /* Status Messages */
+    .status-msg {
+      margin-top: 12px;
+      font-size: 14px;
+      text-align: center;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .status-error { color: var(--red-500); }
+    .status-success { color: #10b981; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- 1. HEADER -->
+    <div class="header">
+      <div class="logo">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 28px; height: 28px;"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+        XUREMI NET
+      </div>
+      <div class="subtitle">Fast Affordable Internet</div>
+      <div class="location">Eldoret Town</div>
+    </div>
+
+    <!-- 2. ERROR DISPLAY (Populated by MikroTik variables) -->
+    <div id="mk-error" class="error-banner"></div>
+
+    <!-- 3. PACKAGE CARDS SECTION -->
+    <div class="card">
+      <h2 class="card-title">Choose a Package</h2>
+      
+      <div id="packages-container" class="package-list">
+        <!-- Skeleton loaders shown initially -->
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+      </div>
+
+      <!-- 4. MPESA PAYMENT SECTION -->
+      <div id="payment-section" class="payment-section">
+        <div class="input-group">
+          <label class="input-label">M-Pesa Phone Number</label>
+          <input type="tel" id="phone-input" placeholder="07XXXXXXXX" maxlength="12">
+        </div>
+        
+        <button id="pay-btn" class="btn btn-blue" onclick="handlePayment()">
+          <span id="pay-text">Pay via M-Pesa</span>
+          <div id="pay-spinner" class="spinner"></div>
+        </button>
+
+        <div id="payment-status" class="status-msg"></div>
+      </div>
+
+      <!-- Toggle for manual login -->
+      <div class="toggle-login" onclick="toggleManualLogin()">Already paid? Enter credentials</div>
+
+      <!-- 5. MANUAL LOGIN SECTION (Hidden by default) -->
+      <div id="manual-login" class="manual-login">
+        <!-- Action must be MikroTik link-login-only variable -->
+        <form name="login" action="$(link-login-only)" method="post" id="mikrotik-form">
+          <input type="hidden" name="dst" value="$(link-orig)" />
+          <input type="hidden" name="popup" value="true" />
+          
+          <div class="input-group">
+            <input type="text" name="username" id="mk-username" value="$(username)" placeholder="Username" required>
+          </div>
+          <div class="input-group">
+            <input type="password" name="password" id="mk-password" placeholder="Password" required>
+          </div>
+          
+          <button type="submit" class="btn btn-navy">Connect to Internet</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 6. FOOTER -->
+    <div class="footer">
+      <a href="tel:0700000000">Need help? Call or WhatsApp: 0700 000 000</a>
+      <div class="footer-powered">Powered by Xuremi Net</div>
+    </div>
+
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // --- ICONS ---
+    const ICONS = {
+      clock: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>',
+      zap: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>',
+      check: '<svg class="icon check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+      success: '<svg class="icon icon-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+      error: '<svg class="icon icon-error" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+    };
+
+    // --- CONFIGURATION ---
+    // Change this to your production backend URL once deployed (e.g. https://api.xuremi.net)
+    const BASE_URL = "http://localhost:5000";
+    
+    // Fallback packages if API fails
+    const FALLBACK_PACKAGES = [
+      { id: "pkg_1", name: "Daily", speed: "2Mbps", duration: 24, price: 50 },
+      { id: "pkg_2", name: "Weekly", speed: "5Mbps", duration: 168, price: 200 },
+      { id: "pkg_3", name: "Monthly", speed: "10Mbps", duration: 720, price: 500 }
+    ];
+
+    // State Variables
+    let selectedPackageId = null;
+    let selectedPackagePrice = 0;
+    let pollingInterval = null;
+    let pollAttempts = 0;
+
+    // --- MIKROTIK VARIABLES ---
+    const mkError = "$(error)";
+    const mkMac = "$(mac)";
+    
+    // Initialize Page
+    document.addEventListener("DOMContentLoaded", () => {
+      // Show MikroTik error if it exists and wasn't left unparsed
+      if (mkError && mkError !== "$(error)") {
+        const errEl = document.getElementById('mk-error');
+        errEl.innerText = mkError;
+        errEl.style.display = 'block';
+      }
+
+      // Fetch packages
+      fetchPackages();
+    });
+
+    // --- FETCH PACKAGES ---
+    async function fetchPackages() {
+      try {
+        const response = await fetch(`${BASE_URL}/api/packages`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        
+        if (data.success && data.data && data.data.length > 0) {
+          renderPackages(data.data);
+        } else {
+          renderPackages(FALLBACK_PACKAGES);
+        }
+      } catch (error) {
+        console.error("Failed to fetch packages, using fallback:", error);
+        renderPackages(FALLBACK_PACKAGES);
+      }
+    }
+
+    // --- RENDER PACKAGES ---
+    function renderPackages(packages) {
+      const container = document.getElementById('packages-container');
+      container.innerHTML = ''; // clear skeletons
+
+      packages.forEach(pkg => {
+        const durationStr = pkg.duration > 24 ? Math.round(pkg.duration/24) + " Days" : pkg.duration + " Hours";
+        const speedStr = pkg.speed || "Up to 5Mbps";
+
+        const div = document.createElement('div');
+        div.className = 'package-item';
+        div.id = `pkg-${pkg.id}`;
+        div.onclick = () => selectPackage(pkg.id, pkg.price, pkg.name);
+        
+        div.innerHTML = `
+          ${ICONS.check}
+          <div class="pkg-name">${pkg.name}</div>
+          <div class="pkg-details">${ICONS.clock} ${durationStr} &nbsp; ${ICONS.zap} ${speedStr}</div>
+          <div class="pkg-price">Ksh ${pkg.price}</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // --- SELECT PACKAGE ---
+    function selectPackage(id, price, name) {
+      selectedPackageId = id;
+      selectedPackagePrice = price;
+
+      document.querySelectorAll('.package-item').forEach(el => el.classList.remove('selected'));
+      document.getElementById(`pkg-${id}`).classList.add('selected');
+
+      document.getElementById('pay-text').innerText = `Pay Ksh ${price} via M-Pesa`;
+      document.getElementById('payment-section').classList.add('open');
+      
+      setStatus('');
+      setTimeout(() => document.getElementById('phone-input').focus(), 300);
+    }
+
+    // --- PAYMENT FLOW ---
+    async function handlePayment() {
+      const phoneInput = document.getElementById('phone-input').value.trim();
+      const btn = document.getElementById('pay-btn');
+      const spinner = document.getElementById('pay-spinner');
+      const text = document.getElementById('pay-text');
+
+      const phoneRegex = /^(07|01|2547|2541)\d{8}$/;
+      if (!phoneRegex.test(phoneInput)) {
+        setStatus(ICONS.error + "<span>Invalid phone number. Use 07... or 2547...</span>", "error");
+        return;
+      }
+
+      let formattedPhone = phoneInput;
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = '254' + formattedPhone.substring(1);
+      }
+
+      btn.disabled = true;
+      spinner.style.display = 'block';
+      text.innerText = 'Sending M-Pesa prompt...';
+      setStatus('');
+
+      try {
+        const response = await fetch(`${BASE_URL}/api/payments/stk-push`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: formattedPhone,
+            packageId: selectedPackageId,
+            amount: selectedPackagePrice
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.data && data.data.checkoutRequestId) {
+          text.innerText = 'Confirming payment...';
+          spinner.style.display = 'block';
+          setStatus(ICONS.success + "<span>Check your phone for the M-Pesa prompt</span>", "success");
+          startPolling(data.data.checkoutRequestId);
+        } else {
+          throw new Error(data.message || 'Failed to initiate M-Pesa');
+        }
+      } catch (error) {
+        btn.disabled = false;
+        spinner.style.display = 'none';
+        text.innerText = `Pay Ksh ${selectedPackagePrice} via M-Pesa`;
+        setStatus(ICONS.error + "<span>" + error.message + "</span>", "error");
+      }
+    }
+
+    // --- POLLING LOGIC ---
+    function startPolling(checkoutRequestId) {
+      pollAttempts = 0;
+      const maxAttempts = 20;
+
+      pollingInterval = setInterval(async () => {
+        pollAttempts++;
+        const timeLeft = (maxAttempts - pollAttempts) * 3;
+        document.getElementById('pay-text').innerText = `Confirming payment... (${timeLeft}s)`;
+
+        if (pollAttempts >= maxAttempts) {
+          clearInterval(pollingInterval);
+          handlePollingTimeout();
+          return;
+        }
+
+        try {
+          const res = await fetch(`${BASE_URL}/api/payments/${checkoutRequestId}/status`);
+          const data = await res.json();
+
+          if (data.success && data.data && data.data.status === 'SUCCESS') {
+            clearInterval(pollingInterval);
+            handlePaymentSuccess(data.data);
+          } else if (data.success && data.data && data.data.status === 'FAILED') {
+            clearInterval(pollingInterval);
+            handlePaymentFailed(data.data.failureReason || 'Payment failed or cancelled');
+          }
+        } catch (error) {
+          console.error("Polling error:", error);
+        }
+      }, 3000);
+    }
+
+    function handlePaymentSuccess(paymentData) {
+      const btn = document.getElementById('pay-btn');
+      const spinner = document.getElementById('pay-spinner');
+      
+      btn.disabled = false;
+      btn.classList.replace('btn-blue', 'btn-navy');
+      spinner.style.display = 'none';
+      document.getElementById('pay-text').innerText = 'Connected! Redirecting...';
+      setStatus(ICONS.success + "<span>Payment received successfully!</span>", "success");
+
+      const username = paymentData.session?.username || paymentData.username;
+      const password = paymentData.session?.password || paymentData.password;
+
+      if (username && password) {
+        document.getElementById('mk-username').value = username;
+        document.getElementById('mk-password').value = password;
+        setTimeout(() => {
+          document.getElementById('mikrotik-form').submit();
+        }, 1000);
+      } else {
+        setStatus(ICONS.error + "<span>Payment received but missing credentials. Please contact support.</span>", "error");
+        toggleManualLogin();
+      }
+    }
+
+    function handlePaymentFailed(reason) {
+      resetPaymentButton();
+      setStatus(ICONS.error + "<span>" + reason + "</span>", "error");
+    }
+
+    function handlePollingTimeout() {
+      resetPaymentButton();
+      setStatus(ICONS.error + "<span>Payment not confirmed yet. If you paid, enter your credentials below or contact support.</span>", "error");
+      toggleManualLogin();
+    }
+
+    function resetPaymentButton() {
+      const btn = document.getElementById('pay-btn');
+      const spinner = document.getElementById('pay-spinner');
+      btn.disabled = false;
+      spinner.style.display = 'none';
+      document.getElementById('pay-text').innerText = `Pay Ksh ${selectedPackagePrice} via M-Pesa`;
+    }
+
+    // --- UTILS ---
+    function setStatus(html, type = "success") {
+      const el = document.getElementById('payment-status');
+      el.innerHTML = html;
+      el.className = `status-msg ${type === 'error' ? 'status-error' : 'status-success'}`;
+    }
+
+    function toggleManualLogin() {
+      const loginDiv = document.getElementById('manual-login');
+      if (loginDiv.style.display === 'block') {
+        loginDiv.style.display = 'none';
+      } else {
+        loginDiv.style.display = 'block';
+        loginDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }
+  </script>
+</body>
+</html>

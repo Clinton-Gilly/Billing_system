@@ -1,0 +1,153 @@
+// datasource + generator
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum SessionStatus {
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+// ─── Models ───────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String   @unique
+  password  String
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions HotspotSession[]
+  payments Payment[]
+  invoices Invoice[]
+
+  @@map("users")
+}
+
+model Package {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  price           Float
+  duration        Int // in hours
+  speed           String // e.g. "2M/2M"
+  dataLimit       String? // e.g. "1GB" or null for unlimited
+  mikrotikProfile String // profile name on MikroTik router
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  sessions HotspotSession[]
+  payments Payment[]
+
+  @@map("packages")
+}
+
+model HotspotSession {
+  id        String        @id @default(cuid())
+  userId    String
+  packageId String
+  username  String // MikroTik hotspot username (unique per session)
+  password  String // MikroTik hotspot password
+  startTime DateTime      @default(now())
+  expiresAt DateTime
+  status    SessionStatus @default(ACTIVE)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package Package @relation(fields: [packageId], references: [id])
+
+  @@map("hotspot_sessions")
+}
+
+model Invoice {
+  id        String        @id @default(cuid())
+  userId    String
+  amount    Float
+  status    InvoiceStatus @default(PENDING)
+  dueDate   DateTime
+  notes     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@map("invoices")
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  userId            String
+  invoiceId         String?
+  amount            Float
+  mpesaRef          String?       @unique // M-Pesa transaction ID
+  checkoutRequestId String? // STK Push request ID
+  phoneNumber       String? // phone used for payment
+  status            PaymentStatus @default(PENDING)
+  failureReason     String?
+  packageId         String? // Hotspot package selected
+  macAddress        String? // Device MAC address
+  ipAddress         String? // Device IP address
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoice Invoice? @relation(fields: [invoiceId], references: [id])
+  package Package? @relation(fields: [packageId], references: [id])
+
+  @@map("payments")
+}
+
+model MikroTikRouter {
+  id        String   @id @default(cuid())
+  name      String
+  host      String // Remote IP or hostname
+  port      Int      @default(8728)
+  username  String
+  password  String
+  location  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("mikrotik_routers")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
